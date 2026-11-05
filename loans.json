@@ -1,1 +1,16 @@
-{"loans":[]}
+{
+  "loans": [
+    {
+      "item": "VISTRA COLLAGEN UC-II",
+      "qty": 72,
+      "unit": "ขวด",
+      "borrower": "B",
+      "dateBorrowed": "2026-11-05",
+      "dueDate": null,
+      "note": null,
+      "id": "mw2yyap3bv1ti",
+      "status": "borrowed",
+      "dateReturned": null
+    }
+  ]
+}
