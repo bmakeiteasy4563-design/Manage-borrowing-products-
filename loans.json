@@ -11,18 +11,6 @@
       "id": "mw2yyap3bv1ti",
       "status": "borrowed",
       "dateReturned": null
-    },
-    {
-      "item": "VISTRA MAGNESIUM COMPLEX",
-      "qty": 168,
-      "unit": "ขวด",
-      "borrower": "B",
-      "dateBorrowed": "2026-11-05",
-      "dueDate": null,
-      "note": "คลัง",
-      "id": "mw31gy0jq4do9",
-      "status": "returned",
-      "dateReturned": "2026-11-05"
     }
   ]
 }
