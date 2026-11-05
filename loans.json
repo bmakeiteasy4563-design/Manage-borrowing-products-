@@ -21,8 +21,8 @@
       "dueDate": null,
       "note": "คลัง",
       "id": "mw31gy0jq4do9",
-      "status": "returned",
-      "dateReturned": "2026-11-05"
+      "status": "borrowed",
+      "dateReturned": null
     }
   ]
 }
