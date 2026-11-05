@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MIES TRADING | ยืม-คืนสินค้า</title>
+<meta name="theme-color" content="#094849">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MIES ยืม-คืน">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F4F1; --card:#FFFFFF; --ink:#14201C; --soft:#6B7570; --line:#E6E6E1;
+  --green:#14302B; --green2:#22443B; --gold:#E2C98A; --goldd:#B8964A; --red:#B0584A; --ok:#3F7A5A; --field:#fff;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0E1714;--card:#17241F;--ink:#ECEFEA;--soft:#98A59E;--line:#2A3A33;--green:#0F2420;--green2:#1B3A31;--red:#E0806F;--ok:#7DBB92;--field:#101C18}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans Thai',system-ui,sans-serif;line-height:1.45}
+.app{max-width:560px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top,0px)) 18px calc(110px + env(safe-area-inset-bottom,0px))}
+.pill{display:flex;justify-content:flex-end}
+.pill span{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px;font-size:14px;color:var(--soft)}
+.pill u{cursor:pointer;color:var(--ink)}
+.head{display:flex;justify-content:space-between;align-items:center;margin:10px 0 18px}
+h1{font-size:30px;font-weight:700;margin:0;letter-spacing:.5px}
+.sub{color:var(--soft);font-size:17px;margin:2px 0 0}
+.avatar{width:58px;height:58px;border-radius:20px;background:var(--green);color:var(--gold);display:grid;place-items:center;font-weight:700;font-size:20px}
+.role{display:inline-block;margin-top:8px;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid var(--line);color:var(--soft);background:var(--card)}
+.role.edit{background:var(--ok);border-color:var(--ok);color:#fff}
+.hero{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;border-radius:30px;padding:26px 26px 22px;position:relative;overflow:hidden;margin-bottom:14px}
+.hero small{display:block;letter-spacing:2px;font-weight:600;color:#B9C6C0;font-size:14px}
+.hero .big{font-size:52px;font-weight:700;color:var(--gold);line-height:1.15;margin:10px 0 12px}
+.hero .big i{font-style:normal;font-size:22px;color:#B9C6C0;font-weight:500;margin-left:8px}
+.hero p{margin:0;color:#C9D3CE;font-size:16px}
+.hero svg{position:absolute;right:0;bottom:-8px;opacity:.35;pointer-events:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:20px}
+.stat span{color:var(--soft);font-size:16px}
+.stat b{display:block;font-size:30px;margin-top:6px}
+.stat b.red{color:var(--red)}.stat b.ok{color:var(--ok)}
+h2{font-size:20px;margin:0 0 12px}
+.list{display:flex;flex-direction:column;gap:12px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:16px 18px}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.name{font-size:18px;font-weight:700;margin:0;word-break:break-word}
+.stamp{flex-shrink:0;border-radius:99px;padding:2px 12px;font-size:13px;font-weight:600;background:#F6E3DE;color:var(--red)}
+.item.returned .stamp{background:#DDEFE4;color:var(--ok)}
+@media (prefers-color-scheme:dark){.stamp{background:#3A2420}.item.returned .stamp{background:#1D3A2B}}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px 14px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:15px}
+.meta b{color:var(--soft);font-weight:500;display:block;font-size:12px}
+.note{margin-top:8px;font-size:14px;color:var(--soft)}
+.overdue{color:var(--red);font-weight:600}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.actions button{padding:8px 14px;font-size:14px}
+.actions .right{margin-left:auto}
+.empty{text-align:center;padding:36px 16px;background:var(--card);border:1px dashed var(--line);border-radius:24px;color:var(--soft)}
+select{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:16px;padding:11px 14px;width:100%}
+input,textarea{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:16px;padding:11px 14px;width:100%}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--goldd);outline-offset:1px}
+button{font:inherit;cursor:pointer;border:0;border-radius:16px;padding:10px 16px;background:var(--green);color:var(--gold);font-weight:600}
+button.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button.ghost.on{background:var(--green);color:var(--gold);border-color:var(--green)}
+button.danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+button.ok{background:var(--ok);color:#fff}
+.chips{display:flex;gap:8px;margin:10px 0 14px;overflow-x:auto}.chips button{white-space:nowrap}
+.tab[hidden]{display:none}
+.offline{background:var(--gold);color:var(--green);padding:8px 14px;border-radius:16px;font-size:14px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.card p{margin:0;color:var(--soft);font-size:14px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+nav div{max-width:560px;margin:0 auto;display:flex}
+nav button{flex:1;background:none;color:var(--soft);padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;font-weight:500;border-radius:14px}
+nav button svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--ink);font-weight:700}
+nav button[hidden]{display:none}
+dialog{border:1px solid var(--line);border-radius:28px;background:var(--card);color:var(--ink);padding:22px;width:min(440px,92vw)}
+dialog::backdrop{background:rgba(8,14,12,.6)}
+dialog h2{margin:0 0 8px;font-size:22px}
+label{display:block;font-size:13px;color:var(--soft);margin:12px 0 4px}
+.row{display:flex;gap:10px}.row>div{flex:1}
+.err{color:var(--red);font-size:13px;min-height:18px;margin-top:8px}
+.foot{display:flex;gap:8px;margin-top:14px}.foot button{flex:1}
+</style></head>
+<body>
+<div class="app">
+  <div class="pill"><span id="pilltxt">โหมดดูอย่างเดียว</span></div>
+  <div class="head">
+    <div>
+      <h1>MIES TRADING</h1>
+      <p class="sub">Borrow &amp; Return Overview</p>
+      <span id="badge" class="role">กำลังโหลด…</span>
+    </div>
+    <div class="avatar">MI</div>
+  </div>
+  <div id="offline" class="offline" hidden>ออฟไลน์ — แสดงข้อมูลล่าสุดที่บันทึกไว้</div>
+
+  <section id="tab-home" class="tab">
+    <div class="hero">
+      <small>กำลังยืมอยู่</small>
+      <div class="big"><span id="hero-n">0</span><i>รายการ</i></div>
+      <p id="hero-sub">—</p>
+      <svg width="220" height="60" viewBox="0 0 220 60"><path d="M0 50 C40 55 60 20 110 28 S180 38 220 12" stroke="#E2C98A" stroke-width="2" fill="none"/></svg>
+    </div>
+    <div class="grid">
+      <div class="stat"><span>ทั้งหมด</span><b id="s-all">0</b></div>
+      <div class="stat"><span>คืนแล้ว</span><b id="s-ret" class="ok">0</b></div>
+      <div class="stat"><span>เลยกำหนดคืน</span><b id="s-late" class="red">0</b></div>
+      <div class="stat"><span>ผู้ยืม</span><b id="s-who">0</b></div>
+    </div>
+    <h2>รายการล่าสุด</h2>
+    <div id="recent" class="list"></div>
+  </section>
+
+  <section id="tab-list" class="tab" hidden>
+    <h2>รายการทั้งหมด</h2>
+    <input id="q" type="search" placeholder="ค้นหาสินค้า หรือชื่อผู้ยืม…">
+    <div class="chips">
+      <button class="ghost on" data-f="all">ทั้งหมด</button>
+      <button class="ghost" data-f="borrowed">ยืมอยู่</button>
+      <button class="ghost" data-f="returned">คืนแล้ว</button>
+    </div>
+    <div id="list" class="list"></div>
+  </section>
+
+  <section id="tab-account" class="tab" hidden>
+    <h2>บัญชี</h2>
+    <div class="card">
+      <p id="hint">ผู้ยืมดูข้อมูลได้อย่างเดียว ส่วนเจ้าของสินค้าต้องเข้าสู่ระบบก่อนจึงจะแก้ไขได้</p>
+      <button id="auth">เข้าสู่ระบบเจ้าของสินค้า</button>
+      <button id="export" class="ghost" hidden>สำรองข้อมูล (JSON)</button>
+    </div>
+  </section>
+</div>
+
+<nav><div>
+  <button data-tab="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>ภาพรวม</button>
+  <button id="add" hidden><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>เพิ่ม</button>
+  <button data-tab="list"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>รายการ</button>
+  <button data-tab="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>บัญชี</button>
+</div></nav>
+
+<dialog id="dlg">
+  <h2 id="dtitle">เพิ่มรายการยืม</h2>
+  <label>ชื่อสินค้า</label><input id="f-item" placeholder="เช่น คอลลาเจน 30 ซอง">
+  <div class="row">
+    <div><label>จำนวน</label><input id="f-qty" type="number" min="1" value="1"></div>
+    <div><label>หน่วย</label><select id="f-unit"><option>กล่อง</option><option>ขวด</option><option>กระปุก</option><option>ซอง</option><option>ชิ้น</option></select></div>
+    <div><label>ผู้ยืม</label><input id="f-who" placeholder="ชื่อผู้ยืม"></div>
+  </div>
+  <div class="row">
+    <div><label>วันที่ยืม</label><input id="f-date" type="date"></div>
+    <div><label>กำหนดคืน (ถ้ามี)</label><input id="f-due" type="date"></div>
+  </div>
+  <label>หมายเหตุ</label><textarea id="f-note" rows="2"></textarea>
+  <div id="err" class="err"></div>
+  <div class="foot"><button id="save">บันทึก</button><button id="cancel" class="ghost">ยกเลิก</button></div>
+</dialog>
+
+<dialog id="login">
+  <h2>เข้าสู่ระบบเจ้าของสินค้า</h2>
+  <label>Repo (ชื่อผู้ใช้/ชื่อ repo)</label><input id="l-repo" placeholder="เช่น somchai/borrow-ledger" autocapitalize="off">
+  <label>GitHub Token (สิทธิ์ Contents: Read and write)</label><input id="l-token" type="password" autocomplete="off" placeholder="github_pat_...">
+  <div id="l-err" class="err"></div>
+  <div class="foot"><button id="l-go">เข้าสู่ระบบ</button><button id="l-cancel" class="ghost">ยกเลิก</button></div>
+</dialog>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
