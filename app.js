@@ -142,6 +142,7 @@
       m.appendChild(field('จำนวน', r.qty + ' ' + (r.unit || 'ชิ้น')));
       m.appendChild(field('ผู้ยืม', r.borrower));
       if (r.lender) m.appendChild(field('ผู้ให้ยืม', r.lender));
+      if (r.batchId) { var nb = loans.filter(function (x) { return x.batchId === r.batchId; }).length; if (nb > 1) m.appendChild(field('ยืมพร้อมกัน', nb + ' รายการ')); }
       m.appendChild(field('วันที่ยืม', fmt(r.dateBorrowed)));
       if (r.dueDate) {
         var late = r.status !== 'returned' && r.dueDate < today();
@@ -209,48 +210,92 @@
     try { await mutate(function (l) { return l.filter(function (x) { return x.id !== r.id; }); }); deleteImage(r.image); } catch (e) { fail(); }
   }
 
+  var UNITS = ['กล่อง', 'ขวด', 'กระปุก', 'ซอง', 'ชิ้น'], rows = [];
+  function renumber() {
+    rows.forEach(function (s, i) { s.title.textContent = 'สินค้ารายการที่ ' + (i + 1); s.del.hidden = rows.length < 2; });
+  }
+  function makeRow(r) {
+    var s = { pending: null, remove: false, current: r && r.image ? r.image : null };
+    var box = el('div', 'itemrow'); s.box = box;
+    var head = el('div', 'ihead'); s.title = el('b'); s.del = el('button', 'danger', 'ลบรายการนี้'); s.del.type = 'button';
+    s.del.onclick = function () { box.remove(); rows.splice(rows.indexOf(s), 1); renumber(); };
+    head.appendChild(s.title); head.appendChild(s.del); box.appendChild(head);
+    box.appendChild(el('label', null, 'ชื่อสินค้า'));
+    s.name = document.createElement('input'); s.name.placeholder = 'เช่น คอลลาเจน 30 ซอง'; s.name.value = r ? r.item : ''; box.appendChild(s.name);
+    var row = el('div', 'row'), d1 = el('div'), d2 = el('div');
+    d1.appendChild(el('label', null, 'จำนวน')); s.qty = document.createElement('input'); s.qty.type = 'number'; s.qty.min = 1; s.qty.value = r ? r.qty : 1; d1.appendChild(s.qty);
+    d2.appendChild(el('label', null, 'หน่วย')); s.unit = document.createElement('select');
+    var us = UNITS.slice(); if (r && r.unit && us.indexOf(r.unit) < 0) us.push(r.unit);
+    us.forEach(function (u) { var o = document.createElement('option'); o.textContent = u; s.unit.appendChild(o); });
+    s.unit.value = r && r.unit ? r.unit : 'กล่อง'; d2.appendChild(s.unit);
+    row.appendChild(d1); row.appendChild(d2); box.appendChild(row);
+    box.appendChild(el('label', null, 'รูปสินค้า (ถ้ามี)'));
+    var ph = el('div', 'photo'), btns = el('div', 'btns');
+    s.prev = document.createElement('img'); s.prev.alt = ''; s.prev.hidden = true;
+    s.btn = el('button', 'ghost', '📷 ถ่ายรูป / เลือกรูป'); s.btn.type = 'button';
+    s.rm = el('button', 'danger', 'ลบรูป'); s.rm.type = 'button'; s.rm.hidden = true;
+    s.file = document.createElement('input'); s.file.type = 'file'; s.file.accept = 'image/*'; s.file.hidden = true;
+    btns.appendChild(s.btn); btns.appendChild(s.rm); ph.appendChild(s.prev); ph.appendChild(btns); ph.appendChild(s.file); box.appendChild(ph);
+    function showPrev(src, path) {
+      s.prev.hidden = !src; s.rm.hidden = !src;
+      s.btn.textContent = src ? '📷 เปลี่ยนรูป' : '📷 ถ่ายรูป / เลือกรูป';
+      if (!src) { s.prev.removeAttribute('src'); return; }
+      if (path) loadImg(s.prev, path); else { s.prev.onerror = null; s.prev.src = src; }
+    }
+    s.btn.onclick = function () { s.file.click(); };
+    s.file.onchange = async function () {
+      var f = s.file.files && s.file.files[0]; if (!f) return;
+      try { s.pending = await compress(f); s.remove = false; showPrev(s.pending); $('err').textContent = ''; }
+      catch (e) { $('err').textContent = 'เปิดรูปนี้ไม่ได้ ลองเลือกรูปอื่น'; }
+    };
+    s.rm.onclick = function () { s.pending = null; s.remove = true; s.file.value = ''; showPrev(null); };
+    if (s.current) showPrev(imgSrc(s.current), s.current);
+    rows.push(s); $('items').appendChild(box); renumber();
+    return s;
+  }
+
   function openForm(r) {
     editingId = r ? r.id : null;
     $('dtitle').textContent = r ? 'แก้ไขรายการยืม' : 'เพิ่มรายการยืม';
-    $('f-item').value = r ? r.item : ''; $('f-qty').value = r ? r.qty : 1; $('f-unit').value = r && r.unit ? r.unit : 'กล่อง'; $('f-who').value = r ? r.borrower : '';
+    $('items').textContent = ''; rows = [];
+    makeRow(r || null);
+    $('add-row').hidden = !!r;
+    $('f-who').value = r ? r.borrower : ''; $('f-lender').value = r && r.lender ? r.lender : '';
     $('f-date').value = r ? r.dateBorrowed : today(); $('f-due').value = r && r.dueDate ? r.dueDate : ''; $('f-note').value = r ? (r.note || '') : '';
-    $('f-lender').value = r && r.lender ? r.lender : '';
-    pendingImg = null; removeImg = false; currentImg = r && r.image ? r.image : null; $('f-img').value = '';
-    showPrev(currentImg ? imgSrc(currentImg) : null, currentImg);
     $('err').textContent = ''; dlg.showModal();
   }
-  function showPrev(src, path) {
-    var p = $('f-prev'); p.hidden = !src; $('f-imgdel').hidden = !src;
-    $('f-imgbtn').textContent = src ? '📷 เปลี่ยนรูป' : '📷 ถ่ายรูป / เลือกรูป';
-    if (!src) { p.removeAttribute('src'); return; }
-    if (path && src === path) loadImg(p, path); else { p.onerror = null; p.src = src; }
-  }
-  $('f-imgbtn').onclick = function () { $('f-img').click(); };
-  $('f-img').onchange = async function () {
-    var f = this.files && this.files[0]; if (!f) return;
-    try { pendingImg = await compress(f); removeImg = false; showPrev(pendingImg); $('err').textContent = ''; }
-    catch (e) { $('err').textContent = 'เปิดรูปนี้ไม่ได้ ลองเลือกรูปอื่น'; }
-  };
-  $('f-imgdel').onclick = function () { pendingImg = null; removeImg = true; $('f-img').value = ''; showPrev(null); };
-  viewer.onclick = function () { viewer.close(); };
+  $('add-row').onclick = function () { var s = makeRow(null); s.box.scrollIntoView({ block: 'center' }); s.name.focus(); };
   $('add').onclick = function () { openForm(null); };
   $('cancel').onclick = function () { dlg.close(); };
+  viewer.onclick = function () { viewer.close(); };
+
   $('save').onclick = async function () {
-    var item = $('f-item').value.trim(), who = $('f-who').value.trim(), date = $('f-date').value;
-    if (!item || !who || !date) { $('err').textContent = 'กรอกชื่อสินค้า ผู้ยืม และวันที่ยืมให้ครบ'; return; }
-    var data = { item: item, qty: Math.max(1, parseInt($('f-qty').value, 10) || 1), unit: $('f-unit').value, borrower: who, lender: $('f-lender').value.trim() || null, dateBorrowed: date, dueDate: $('f-due').value || null, note: $('f-note').value.trim() || null };
-    var btn = $('save'), oldImg = currentImg, newPath = null;
+    var who = $('f-who').value.trim(), date = $('f-date').value;
+    if (!who || !date) { $('err').textContent = 'กรอกผู้ยืม และวันที่ยืมให้ครบ'; return; }
+    for (var k = 0; k < rows.length; k++) {
+      if (!rows[k].name.value.trim()) { $('err').textContent = 'กรอกชื่อสินค้าให้ครบทุกรายการ (รายการที่ ' + (k + 1) + ')'; return; }
+    }
+    var shared = { borrower: who, lender: $('f-lender').value.trim() || null, dateBorrowed: date, dueDate: $('f-due').value || null, note: $('f-note').value.trim() || null };
+    var btn = $('save'), uploaded = [], recs = [];
     btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
     try {
-      if (pendingImg) { newPath = await uploadImage(pendingImg); data.image = newPath; }
-      else if (removeImg) data.image = null;
-      await mutate(function (l) {
-        if (editingId) return l.map(function (x) { return x.id === editingId ? Object.assign({}, x, data) : x; });
-        data.id = newId(); data.status = 'borrowed'; data.dateReturned = null; l.push(data); return l;
-      });
-      if ((pendingImg || removeImg) && oldImg) deleteImage(oldImg);
+      for (var i = 0; i < rows.length; i++) {
+        var s = rows[i];
+        var rec = Object.assign({ item: s.name.value.trim(), qty: Math.max(1, parseInt(s.qty.value, 10) || 1), unit: s.unit.value }, shared);
+        if (s.pending) { var p = await uploadImage(s.pending); uploaded.push(p); rec.image = p; }
+        else if (s.remove) rec.image = null;
+        recs.push(rec);
+      }
+      if (editingId) {
+        await mutate(function (l) { return l.map(function (x) { return x.id === editingId ? Object.assign({}, x, recs[0]) : x; }); });
+        if ((rows[0].pending || rows[0].remove) && rows[0].current) deleteImage(rows[0].current);
+      } else {
+        var bid = recs.length > 1 ? newId() : null;
+        recs.forEach(function (rc) { rc.id = newId(); rc.status = 'borrowed'; rc.dateReturned = null; if (bid) rc.batchId = bid; });
+        await mutate(function (l) { return l.concat(recs); });
+      }
     } catch (e) {
-      if (newPath) deleteImage(newPath);
+      uploaded.forEach(deleteImage);
       $('err').textContent = 'บันทึกไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตหรือสิทธิ์ของ token';
       btn.disabled = false; btn.textContent = 'บันทึก'; return;
     }

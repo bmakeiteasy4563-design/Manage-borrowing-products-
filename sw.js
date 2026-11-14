@@ -1,4 +1,4 @@
-const CACHE = "borrow-ledger-v7";
+const CACHE = "borrow-ledger-v8";
 const SHELL = ["./", "index.html", "app.js", "config.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 

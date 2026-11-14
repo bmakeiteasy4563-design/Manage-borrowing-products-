@@ -87,6 +87,9 @@ label{display:block;font-size:13px;color:var(--soft);margin:12px 0 4px}
 .row{display:flex;gap:10px}.row>div{flex:1}
 .err{color:var(--red);font-size:13px;min-height:18px;margin-top:8px}
 .foot{display:flex;gap:8px;margin-top:14px}.foot button{flex:1}
+.itemrow{border:1px solid var(--line);border-radius:20px;padding:4px 14px 14px;margin-top:10px}
+.ihead{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.ihead b{font-size:14px}.ihead button{padding:4px 10px;font-size:13px}
 .name{flex:1}.top{align-items:center}
 .thumb{width:56px;height:56px;border-radius:14px;object-fit:cover;flex-shrink:0;border:1px solid var(--line);background:var(--field);cursor:zoom-in}
 dialog#dlg{max-height:92vh;overflow:auto}
@@ -164,11 +167,8 @@ dialog#dlg{max-height:92vh;overflow:auto}
 
 <dialog id="dlg">
   <h2 id="dtitle">เพิ่มรายการยืม</h2>
-  <label>ชื่อสินค้า</label><input id="f-item" placeholder="เช่น คอลลาเจน 30 ซอง">
-  <div class="row">
-    <div><label>จำนวน</label><input id="f-qty" type="number" min="1" value="1"></div>
-    <div><label>หน่วย</label><select id="f-unit"><option>กล่อง</option><option>ขวด</option><option>กระปุก</option><option>ซอง</option><option>ชิ้น</option></select></div>
-  </div>
+  <div id="items"></div>
+  <button type="button" id="add-row" class="ghost" style="margin-top:10px;width:100%">+ เพิ่มสินค้าอีกรายการ</button>
   <div class="row">
     <div><label>ผู้ยืม</label><input id="f-who" placeholder="ชื่อผู้ยืม"></div>
     <div><label>ผู้ให้ยืม (ชื่อ / แผนก)</label><input id="f-lender" list="lenders" placeholder="เช่น คุณสมชาย / ฝ่ายขาย"></div>
@@ -179,15 +179,6 @@ dialog#dlg{max-height:92vh;overflow:auto}
     <div><label>กำหนดคืน (ถ้ามี)</label><input id="f-due" type="date"></div>
   </div>
   <label>หมายเหตุ</label><textarea id="f-note" rows="2"></textarea>
-  <label>รูปสินค้า (ถ้ามี)</label>
-  <div class="photo">
-    <img id="f-prev" alt="" hidden>
-    <div class="btns">
-      <button type="button" id="f-imgbtn" class="ghost">📷 ถ่ายรูป / เลือกรูป</button>
-      <button type="button" id="f-imgdel" class="danger" hidden>ลบรูป</button>
-    </div>
-    <input id="f-img" type="file" accept="image/*" hidden>
-  </div>
   <div id="err" class="err"></div>
   <div class="foot"><button id="save">บันทึก</button><button id="cancel" class="ghost">ยกเลิก</button></div>
 </dialog>
