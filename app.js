@@ -212,7 +212,7 @@
 
   var UNITS = ['กล่อง', 'ขวด', 'กระปุก', 'ซอง', 'ชิ้น'], rows = [];
   function renumber() {
-    rows.forEach(function (s, i) { s.title.textContent = 'สินค้ารายการที่ ' + (i + 1); s.del.hidden = rows.length < 2; });
+    rows.forEach(function (s, i) { s.title.textContent = 'สินค้ารายการที่ ' + (i + 1); s.del.hidden = rows.length < 2 || (!!editingId && s === rows[0]); });
   }
   function makeRow(r) {
     var s = { pending: null, remove: false, current: r && r.image ? r.image : null };
@@ -259,7 +259,7 @@
     $('dtitle').textContent = r ? 'แก้ไขรายการยืม' : 'เพิ่มรายการยืม';
     $('items').textContent = ''; rows = [];
     makeRow(r || null);
-    $('add-row').hidden = !!r;
+    $('add-row').hidden = false;
     $('f-who').value = r ? r.borrower : ''; $('f-lender').value = r && r.lender ? r.lender : '';
     $('f-date').value = r ? r.dateBorrowed : today(); $('f-due').value = r && r.dueDate ? r.dueDate : ''; $('f-note').value = r ? (r.note || '') : '';
     $('err').textContent = ''; dlg.showModal();
@@ -286,13 +286,16 @@
         else if (s.remove) rec.image = null;
         recs.push(rec);
       }
+      var base = editingId ? loans.filter(function (x) { return x.id === editingId; })[0] : null;
+      var bid = (base && base.batchId) || (recs.length > 1 ? newId() : null);
+      var fresh = editingId ? recs.slice(1) : recs;
+      fresh.forEach(function (rc) { rc.id = newId(); rc.status = 'borrowed'; rc.dateReturned = null; if (bid) rc.batchId = bid; });
       if (editingId) {
-        await mutate(function (l) { return l.map(function (x) { return x.id === editingId ? Object.assign({}, x, recs[0]) : x; }); });
+        if (bid) recs[0].batchId = bid;
+        await mutate(function (l) { return l.map(function (x) { return x.id === editingId ? Object.assign({}, x, recs[0]) : x; }).concat(fresh); });
         if ((rows[0].pending || rows[0].remove) && rows[0].current) deleteImage(rows[0].current);
       } else {
-        var bid = recs.length > 1 ? newId() : null;
-        recs.forEach(function (rc) { rc.id = newId(); rc.status = 'borrowed'; rc.dateReturned = null; if (bid) rc.batchId = bid; });
-        await mutate(function (l) { return l.concat(recs); });
+        await mutate(function (l) { return l.concat(fresh); });
       }
     } catch (e) {
       uploaded.forEach(deleteImage);
