@@ -1,3 +1,49 @@
 {
-  "loans": []
+  "loans": [
+    {
+      "item": "Vistra bilberry",
+      "qty": 3,
+      "unit": "ขวด",
+      "borrower": "Ya",
+      "lender": "Mai",
+      "dateBorrowed": "2026-11-14",
+      "dueDate": null,
+      "note": null,
+      "image": "images/mwgid5y7iho3w.jpg",
+      "id": "mwgidanfi10j2",
+      "status": "borrowed",
+      "dateReturned": null,
+      "batchId": "mwgidanfzp6u3"
+    },
+    {
+      "item": "Vistra b com ultra",
+      "qty": 1,
+      "unit": "ขวด",
+      "borrower": "Ya",
+      "lender": "Mai",
+      "dateBorrowed": "2026-11-14",
+      "dueDate": null,
+      "note": null,
+      "image": "images/mwgid7itev6co.jpg",
+      "id": "mwgidanf0h4h8",
+      "status": "borrowed",
+      "dateReturned": null,
+      "batchId": "mwgidanfzp6u3"
+    },
+    {
+      "item": "Vistra zinc",
+      "qty": 1,
+      "unit": "ขวด",
+      "borrower": "Ya",
+      "lender": "Mai",
+      "dateBorrowed": "2026-11-14",
+      "dueDate": null,
+      "note": null,
+      "image": "images/mwgid8zlici3g.jpg",
+      "id": "mwgidanfhzall",
+      "status": "borrowed",
+      "dateReturned": null,
+      "batchId": "mwgidanfzp6u3"
+    }
+  ]
 }
