@@ -1,18 +1,3 @@
 {
-  "loans": [
-    {
-      "item": "VISTRA COLLAGEN UC-II",
-      "qty": 72,
-      "unit": "ขวด",
-      "borrower": "ญา",
-      "lender": "ใหม่",
-      "dateBorrowed": "2026-11-14",
-      "dueDate": null,
-      "note": null,
-      "image": "images/mwgi2j7lysjk8.jpg",
-      "id": "mwgi2lgqxx8b6",
-      "status": "borrowed",
-      "dateReturned": null
-    }
-  ]
+  "loans": []
 }
