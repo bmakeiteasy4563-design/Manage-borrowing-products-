@@ -87,6 +87,15 @@ label{display:block;font-size:13px;color:var(--soft);margin:12px 0 4px}
 .row{display:flex;gap:10px}.row>div{flex:1}
 .err{color:var(--red);font-size:13px;min-height:18px;margin-top:8px}
 .foot{display:flex;gap:8px;margin-top:14px}.foot button{flex:1}
+.name{flex:1}.top{align-items:center}
+.thumb{width:56px;height:56px;border-radius:14px;object-fit:cover;flex-shrink:0;border:1px solid var(--line);background:var(--field);cursor:zoom-in}
+dialog#dlg{max-height:92vh;overflow:auto}
+.photo{display:flex;gap:12px;align-items:center}
+.photo img{width:72px;height:72px;border-radius:16px;object-fit:cover;border:1px solid var(--line)}
+.photo .btns{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.photo button{padding:8px 14px;font-size:14px}
+#viewer{padding:8px;width:min(520px,94vw)}
+#viewer img{width:100%;display:block;border-radius:20px;cursor:zoom-out}
 </style></head>
 <body>
 <div class="app">
@@ -120,7 +129,7 @@ label{display:block;font-size:13px;color:var(--soft);margin:12px 0 4px}
 
   <section id="tab-list" class="tab" hidden>
     <h2>รายการทั้งหมด</h2>
-    <input id="q" type="search" placeholder="ค้นหาสินค้า หรือชื่อผู้ยืม…">
+    <input id="q" type="search" placeholder="ค้นหาสินค้า ผู้ยืม หรือผู้ให้ยืม…">
     <div class="chips">
       <button class="ghost on" data-f="all">ทั้งหมด</button>
       <button class="ghost" data-f="borrowed">ยืมอยู่</button>
@@ -134,7 +143,14 @@ label{display:block;font-size:13px;color:var(--soft);margin:12px 0 4px}
     <div class="card">
       <p id="hint">ผู้ยืมดูข้อมูลได้อย่างเดียว ส่วนเจ้าของสินค้าต้องเข้าสู่ระบบก่อนจึงจะแก้ไขได้</p>
       <button id="auth">เข้าสู่ระบบเจ้าของสินค้า</button>
-      <button id="export" class="ghost" hidden>สำรองข้อมูล (JSON)</button>
+      <div id="backup" hidden>
+        <p style="margin-bottom:8px">สำรองข้อมูลทั้งหมด</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="export-xlsx" class="ghost">📊 ดาวน์โหลด Excel (.xlsx)</button>
+          <button id="export-pdf" class="ghost">📄 บันทึกเป็น PDF</button>
+          <button id="export" class="ghost">💾 ดาวน์โหลด JSON</button>
+        </div>
+      </div>
     </div>
   </section>
 </div>
@@ -152,16 +168,31 @@ label{display:block;font-size:13px;color:var(--soft);margin:12px 0 4px}
   <div class="row">
     <div><label>จำนวน</label><input id="f-qty" type="number" min="1" value="1"></div>
     <div><label>หน่วย</label><select id="f-unit"><option>กล่อง</option><option>ขวด</option><option>กระปุก</option><option>ซอง</option><option>ชิ้น</option></select></div>
-    <div><label>ผู้ยืม</label><input id="f-who" placeholder="ชื่อผู้ยืม"></div>
   </div>
+  <div class="row">
+    <div><label>ผู้ยืม</label><input id="f-who" placeholder="ชื่อผู้ยืม"></div>
+    <div><label>ผู้ให้ยืม (ชื่อ / แผนก)</label><input id="f-lender" list="lenders" placeholder="เช่น คุณสมชาย / ฝ่ายขาย"></div>
+  </div>
+  <datalist id="lenders"></datalist>
   <div class="row">
     <div><label>วันที่ยืม</label><input id="f-date" type="date"></div>
     <div><label>กำหนดคืน (ถ้ามี)</label><input id="f-due" type="date"></div>
   </div>
   <label>หมายเหตุ</label><textarea id="f-note" rows="2"></textarea>
+  <label>รูปสินค้า (ถ้ามี)</label>
+  <div class="photo">
+    <img id="f-prev" alt="" hidden>
+    <div class="btns">
+      <button type="button" id="f-imgbtn" class="ghost">📷 ถ่ายรูป / เลือกรูป</button>
+      <button type="button" id="f-imgdel" class="danger" hidden>ลบรูป</button>
+    </div>
+    <input id="f-img" type="file" accept="image/*" hidden>
+  </div>
   <div id="err" class="err"></div>
   <div class="foot"><button id="save">บันทึก</button><button id="cancel" class="ghost">ยกเลิก</button></div>
 </dialog>
+
+<dialog id="viewer"><img id="viewer-img" alt=""></dialog>
 
 <dialog id="login">
   <h2>เข้าสู่ระบบเจ้าของสินค้า</h2>
@@ -171,6 +202,7 @@ label{display:block;font-size:13px;color:var(--soft);margin:12px 0 4px}
   <div class="foot"><button id="l-go">เข้าสู่ระบบ</button><button id="l-cancel" class="ghost">ยกเลิก</button></div>
 </dialog>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>

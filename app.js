@@ -4,6 +4,8 @@
   var listEl = $('list'), dlg = $('dlg'), loginDlg = $('login');
   var loans = [], filter = 'all', editingId = null, canEdit = false, ready = false;
   var CACHE_KEY = 'loans-cache-v1';
+  var localImg = {}, pendingImg = null, removeImg = false, currentImg = null;
+  var viewer = $('viewer');
 
   function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function fmt(s) { if (!s) return '-'; var d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }); }
@@ -26,6 +28,46 @@
   function api(path, opt) {
     opt = opt || {}; opt.headers = Object.assign({ 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token }, opt.headers || {});
     return fetch('https://api.github.com/repos/' + repo + path, opt);
+  }
+  // ย่อรูปก่อนอัปโหลด (ด้านยาวสุด 800px, JPEG) เพื่อไม่ให้ repo บวม
+  function compress(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, 800 / Math.max(img.width, img.height));
+        var c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.75));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('img')); };
+      img.src = url;
+    });
+  }
+  async function uploadImage(dataUrl) {
+    var path = 'images/' + newId() + '.jpg';
+    var r = await api('/contents/' + path, { method: 'PUT', body: JSON.stringify({ message: 'add image', content: dataUrl.split(',')[1], branch: 'main' }) });
+    if (!r.ok) throw new Error('upload');
+    localImg[path] = dataUrl; return path;
+  }
+  async function deleteImage(path) { // ลบไฟล์รูปเก่า (ถ้าพลาดก็ข้าม)
+    if (!path) return;
+    try {
+      var g = await api('/contents/' + path + '?ref=main'); if (!g.ok) return;
+      var j = await g.json();
+      await api('/contents/' + path, { method: 'DELETE', body: JSON.stringify({ message: 'remove image', sha: j.sha, branch: 'main' }) });
+    } catch (e) {}
+  }
+  function imgSrc(path) { return localImg[path] || path; }
+  function loadImg(img, path) {
+    img.onerror = function () {
+      img.onerror = null;
+      if (!canEdit) { img.style.display = 'none'; return; } // ผู้ยืม: รอ GitHub Pages อัปเดตรูปใหม่
+      api('/contents/' + path + '?ref=main', { headers: { 'Accept': 'application/vnd.github.raw+json' } })
+        .then(function (res) { if (!res.ok) throw 0; return res.blob(); })
+        .then(function (b) { img.src = URL.createObjectURL(b); })
+        .catch(function () { img.style.display = 'none'; });
+    };
+    img.src = imgSrc(path);
   }
   function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
@@ -72,11 +114,13 @@
     var q = $('q').value.trim().toLowerCase();
     var rows = loans.filter(function (r) {
       if (filter !== 'all' && r.status !== filter) return false;
-      return !q || (r.item || '').toLowerCase().indexOf(q) > -1 || (r.borrower || '').toLowerCase().indexOf(q) > -1;
+      return !q || (r.item || '').toLowerCase().indexOf(q) > -1 || (r.borrower || '').toLowerCase().indexOf(q) > -1 || (r.lender || '').toLowerCase().indexOf(q) > -1;
     }).sort(function (a, b) { return (b.dateBorrowed || '') > (a.dateBorrowed || '') ? 1 : -1; });
     listEl.textContent = '';
     if (!ready) return;
     renderHome(buildCard);
+    var dl = $('lenders'); dl.textContent = '';
+    var seen = {}; loans.forEach(function (x) { var n = (x.lender || '').trim(); if (n && !seen[n]) { seen[n] = 1; var o = document.createElement('option'); o.value = n; dl.appendChild(o); } });
     if (!rows.length) {
       var e = el('div', 'empty');
       e.appendChild(el('div', null, loans.length ? 'ไม่พบรายการที่ตรงกับการค้นหา' : 'ยังไม่มีรายการยืม'));
@@ -86,12 +130,18 @@
     function buildCard(r) {
       var c = el('div', 'item' + (r.status === 'returned' ? ' returned' : ''));
       var top = el('div', 'top');
+      if (r.image) {
+        var th = el('img', 'thumb'); th.alt = r.item; th.loading = 'lazy';
+        th.onclick = function () { $('viewer-img').src = th.src; viewer.showModal(); };
+        loadImg(th, r.image); top.appendChild(th);
+      }
       top.appendChild(el('h3', 'name', r.item));
       top.appendChild(el('div', 'stamp', r.status === 'returned' ? 'คืนแล้ว' : 'ยืมอยู่'));
       c.appendChild(top);
       var m = el('div', 'meta');
       m.appendChild(field('จำนวน', r.qty + ' ' + (r.unit || 'ชิ้น')));
       m.appendChild(field('ผู้ยืม', r.borrower));
+      if (r.lender) m.appendChild(field('ผู้ให้ยืม', r.lender));
       m.appendChild(field('วันที่ยืม', fmt(r.dateBorrowed)));
       if (r.dueDate) {
         var late = r.status !== 'returned' && r.dueDate < today();
@@ -137,12 +187,12 @@
       b.className = 'role edit'; b.textContent = 'โหมดเจ้าของสินค้า (แก้ไขได้)';
       $('pilltxt').innerHTML = 'บันทึกออนไลน์แล้ว ✓ <u id="out">ออกจากระบบ</u>';
       $('out').onclick = function () { $('auth').click(); };
-      $('add').hidden = false; $('export').hidden = false; $('auth').textContent = 'ออกจากระบบ';
+      $('add').hidden = false; $('backup').hidden = false; $('auth').textContent = 'ออกจากระบบ';
       $('hint').textContent = 'ส่งลิงก์หน้านี้ให้ผู้ยืม เขาจะเห็นแบบดูอย่างเดียวโดยไม่ต้องล็อกอิน';
     } else {
       b.className = 'role'; b.textContent = 'โหมดผู้ยืม (ดูอย่างเดียว)';
       $('pilltxt').textContent = 'โหมดดูอย่างเดียว';
-      $('add').hidden = true; $('export').hidden = true; $('auth').textContent = 'เข้าสู่ระบบเจ้าของสินค้า';
+      $('add').hidden = true; $('backup').hidden = true; $('auth').textContent = 'เข้าสู่ระบบเจ้าของสินค้า';
       $('hint').textContent = 'ผู้ยืมดูข้อมูลได้อย่างเดียว ส่วนเจ้าของสินค้าต้องเข้าสู่ระบบก่อนจึงจะแก้ไขได้';
     }
   }
@@ -156,7 +206,7 @@
     } catch (e) { fail(); }
   }
   async function remove(r) {
-    try { await mutate(function (l) { return l.filter(function (x) { return x.id !== r.id; }); }); } catch (e) { fail(); }
+    try { await mutate(function (l) { return l.filter(function (x) { return x.id !== r.id; }); }); deleteImage(r.image); } catch (e) { fail(); }
   }
 
   function openForm(r) {
@@ -164,20 +214,47 @@
     $('dtitle').textContent = r ? 'แก้ไขรายการยืม' : 'เพิ่มรายการยืม';
     $('f-item').value = r ? r.item : ''; $('f-qty').value = r ? r.qty : 1; $('f-unit').value = r && r.unit ? r.unit : 'กล่อง'; $('f-who').value = r ? r.borrower : '';
     $('f-date').value = r ? r.dateBorrowed : today(); $('f-due').value = r && r.dueDate ? r.dueDate : ''; $('f-note').value = r ? (r.note || '') : '';
+    $('f-lender').value = r && r.lender ? r.lender : '';
+    pendingImg = null; removeImg = false; currentImg = r && r.image ? r.image : null; $('f-img').value = '';
+    showPrev(currentImg ? imgSrc(currentImg) : null, currentImg);
     $('err').textContent = ''; dlg.showModal();
   }
+  function showPrev(src, path) {
+    var p = $('f-prev'); p.hidden = !src; $('f-imgdel').hidden = !src;
+    $('f-imgbtn').textContent = src ? '📷 เปลี่ยนรูป' : '📷 ถ่ายรูป / เลือกรูป';
+    if (!src) { p.removeAttribute('src'); return; }
+    if (path && src === path) loadImg(p, path); else { p.onerror = null; p.src = src; }
+  }
+  $('f-imgbtn').onclick = function () { $('f-img').click(); };
+  $('f-img').onchange = async function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    try { pendingImg = await compress(f); removeImg = false; showPrev(pendingImg); $('err').textContent = ''; }
+    catch (e) { $('err').textContent = 'เปิดรูปนี้ไม่ได้ ลองเลือกรูปอื่น'; }
+  };
+  $('f-imgdel').onclick = function () { pendingImg = null; removeImg = true; $('f-img').value = ''; showPrev(null); };
+  viewer.onclick = function () { viewer.close(); };
   $('add').onclick = function () { openForm(null); };
   $('cancel').onclick = function () { dlg.close(); };
   $('save').onclick = async function () {
     var item = $('f-item').value.trim(), who = $('f-who').value.trim(), date = $('f-date').value;
     if (!item || !who || !date) { $('err').textContent = 'กรอกชื่อสินค้า ผู้ยืม และวันที่ยืมให้ครบ'; return; }
-    var data = { item: item, qty: Math.max(1, parseInt($('f-qty').value, 10) || 1), unit: $('f-unit').value, borrower: who, dateBorrowed: date, dueDate: $('f-due').value || null, note: $('f-note').value.trim() || null };
+    var data = { item: item, qty: Math.max(1, parseInt($('f-qty').value, 10) || 1), unit: $('f-unit').value, borrower: who, lender: $('f-lender').value.trim() || null, dateBorrowed: date, dueDate: $('f-due').value || null, note: $('f-note').value.trim() || null };
+    var btn = $('save'), oldImg = currentImg, newPath = null;
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
     try {
+      if (pendingImg) { newPath = await uploadImage(pendingImg); data.image = newPath; }
+      else if (removeImg) data.image = null;
       await mutate(function (l) {
         if (editingId) return l.map(function (x) { return x.id === editingId ? Object.assign({}, x, data) : x; });
         data.id = newId(); data.status = 'borrowed'; data.dateReturned = null; l.push(data); return l;
       });
-    } catch (e) { $('err').textContent = 'บันทึกไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตหรือสิทธิ์ของ token'; return; }
+      if ((pendingImg || removeImg) && oldImg) deleteImage(oldImg);
+    } catch (e) {
+      if (newPath) deleteImage(newPath);
+      $('err').textContent = 'บันทึกไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตหรือสิทธิ์ของ token';
+      btn.disabled = false; btn.textContent = 'บันทึก'; return;
+    }
+    btn.disabled = false; btn.textContent = 'บันทึก';
     dlg.close();
   };
 
@@ -197,9 +274,55 @@
     localStorage.setItem(LS_TOKEN, token); localStorage.setItem(LS_REPO, repo);
     canEdit = true; setBadge(); loginDlg.close(); load();
   };
+  function sortedLoans() { return loans.slice().sort(function (x, y) { return (y.dateBorrowed || '') > (x.dateBorrowed || '') ? 1 : -1; }); }
+  var HEAD = ['สินค้า', 'จำนวน', 'หน่วย', 'ผู้ยืม', 'ผู้ให้ยืม', 'วันที่ยืม', 'กำหนดคืน', 'สถานะ', 'วันที่คืน', 'หมายเหตุ'];
+  function rowOf(r) { return [r.item || '', r.qty || '', r.unit || '', r.borrower || '', r.lender || '', r.dateBorrowed || '', r.dueDate || '', r.status === 'returned' ? 'คืนแล้ว' : 'ยืมอยู่', r.dateReturned || '', r.note || '']; }
+  function download(blob, name) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
   $('export').onclick = function () {
-    var blob = new Blob([JSON.stringify({ loans: loans }, null, 2)], { type: 'application/json' });
-    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'loans-backup-' + today() + '.json'; a.click();
+    download(new Blob([JSON.stringify({ loans: loans }, null, 2)], { type: 'application/json' }), 'loans-backup-' + today() + '.json');
+  };
+
+  $('export-xlsx').onclick = function () {
+    var data = [HEAD].concat(sortedLoans().map(rowOf));
+    if (window.XLSX) {
+      var ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = [{ wch: 28 }, { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 28 }];
+      var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'รายการยืม');
+      XLSX.writeFile(wb, 'loans-backup-' + today() + '.xlsx');
+    } else { // โหลดไลบรารีไม่ได้ (ออฟไลน์) → สำรองเป็น CSV ที่ Excel เปิดได้
+      var csv = data.map(function (row) { return row.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+      download(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }), 'loans-backup-' + today() + '.csv');
+      alert('โหลดตัวสร้างไฟล์ Excel ไม่ได้ (อาจออฟไลน์) จึงสำรองเป็นไฟล์ .csv แทน ซึ่งเปิดใน Excel ได้');
+    }
+  };
+
+  // PDF: เปิดหน้ารายงานแล้วสั่งพิมพ์ → เลือก "บันทึกเป็น PDF" (แสดงภาษาไทยและรูปได้ครบ)
+  $('export-pdf').onclick = function () {
+    var w = window.open('', '_blank');
+    if (!w) { alert('เบราว์เซอร์บล็อกหน้าต่างใหม่ กรุณาอนุญาต pop-up แล้วลองอีกครั้ง'); return; }
+    var rows = sortedLoans().map(function (r) {
+      var img = r.image ? '<img src="' + esc(r.image.indexOf('data:') === 0 ? r.image : (localImg[r.image] || new URL(r.image, location.href).href)) + '">' : '';
+      return '<tr><td class="c">' + img + '</td>' + rowOf(r).map(function (v, i) { return '<td' + (i === 1 ? ' class="c"' : '') + '>' + esc(v) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    var open = loans.filter(function (r) { return r.status !== 'returned'; }).length;
+    w.document.write('<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><title>loans-backup-' + today() + '</title>' +
+      '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">' +
+      '<style>@page{size:A4 landscape;margin:10mm}body{font-family:"Noto Sans Thai",system-ui,sans-serif;font-size:11px;color:#111}' +
+      'h1{font-size:18px;margin:0 0 2px}p{margin:0 0 10px;color:#555}table{width:100%;border-collapse:collapse}' +
+      'th,td{border:1px solid #bbb;padding:4px 6px;vertical-align:middle;text-align:left}th{background:#14302B;color:#E2C98A}' +
+      'tr{page-break-inside:avoid}.c{text-align:center}img{width:44px;height:44px;object-fit:cover;border-radius:6px}</style></head><body>' +
+      '<h1>MIES TRADING – รายการยืม-คืนสินค้า</h1><p>สำรองข้อมูล ณ ' + esc(fmt(today())) + ' · ทั้งหมด ' + loans.length + ' รายการ · ยืมอยู่ ' + open + ' รายการ</p>' +
+      '<table><thead><tr><th>รูป</th>' + HEAD.map(function (x) { return '<th>' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></body></html>');
+    w.document.close();
+    var done = false;
+    function go() { if (done) return; done = true; w.focus(); w.print(); }
+    var imgs = Array.prototype.slice.call(w.document.images), pending = imgs.length;
+    function one() { if (--pending <= 0) setTimeout(go, 700); }
+    if (!pending) setTimeout(go, 700);
+    imgs.forEach(function (i) { if (i.complete) one(); else { i.onload = one; i.onerror = one; } });
+    setTimeout(go, 6000);
   };
 
   $('q').oninput = render;
