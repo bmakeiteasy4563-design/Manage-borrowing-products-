@@ -11,6 +11,18 @@
       "id": "mw2yyap3bv1ti",
       "status": "borrowed",
       "dateReturned": null
+    },
+    {
+      "item": "bilberry",
+      "qty": 1,
+      "unit": "ขวด",
+      "borrower": "บี",
+      "dateBorrowed": "2026-11-12",
+      "dueDate": null,
+      "note": "mai",
+      "id": "mwfu4be5n6k7l",
+      "status": "borrowed",
+      "dateReturned": null
     }
   ]
 }
