@@ -1,3 +1,46 @@
 {
-  "loans": []
+  "loans": [
+    {
+      "item": "VISTRA BILBERRY",
+      "qty": 5,
+      "unit": "ขวด",
+      "borrower": "ya",
+      "lender": "mai",
+      "dateBorrowed": "2026-11-12",
+      "dueDate": null,
+      "note": null,
+      "id": "mwmuewde0n11l",
+      "status": "borrowed",
+      "dateReturned": null,
+      "batchId": "mwmuewdeu6gr7"
+    },
+    {
+      "item": "VISTRA B  ULTRA",
+      "qty": 1,
+      "unit": "ขวด",
+      "borrower": "ya",
+      "lender": "mai",
+      "dateBorrowed": "2026-11-12",
+      "dueDate": null,
+      "note": null,
+      "id": "mwmuewdeqiua3",
+      "status": "borrowed",
+      "dateReturned": null,
+      "batchId": "mwmuewdeu6gr7"
+    },
+    {
+      "item": "VISTRA ZINC",
+      "qty": 1,
+      "unit": "กล่อง",
+      "borrower": "ya",
+      "lender": "mai",
+      "dateBorrowed": "2026-11-12",
+      "dueDate": null,
+      "note": null,
+      "id": "mwmuewdem5trz",
+      "status": "borrowed",
+      "dateReturned": null,
+      "batchId": "mwmuewdeu6gr7"
+    }
+  ]
 }
