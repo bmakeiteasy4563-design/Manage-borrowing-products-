@@ -92,7 +92,8 @@ label{display:block;font-size:13px;color:var(--soft);margin:12px 0 4px}
 .ihead b{font-size:14px}.ihead button{padding:4px 10px;font-size:13px}
 .name{flex:1}.top{align-items:center}
 .thumb{width:56px;height:56px;border-radius:14px;object-fit:cover;flex-shrink:0;border:1px solid var(--line);background:var(--field);cursor:zoom-in}
-dialog#dlg{max-height:92vh;overflow:auto}
+dialog#dlg,dialog#retdlg{max-height:92vh;overflow:auto}
+.retrow{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;opacity:.9}
 .photo{display:flex;gap:12px;align-items:center}
 .photo img{width:72px;height:72px;border-radius:16px;object-fit:cover;border:1px solid var(--line)}
 .photo .btns{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
@@ -181,6 +182,23 @@ dialog#dlg{max-height:92vh;overflow:auto}
   <label>หมายเหตุ</label><textarea id="f-note" rows="2"></textarea>
   <div id="err" class="err"></div>
   <div class="foot"><button id="save">บันทึก</button><button id="cancel" class="ghost">ยกเลิก</button></div>
+</dialog>
+
+<dialog id="retdlg">
+  <h2>บันทึกการคืน</h2>
+  <p id="rt-item" style="margin-bottom:6px"></p>
+  <label>วันที่คืน</label><input id="rt-date" type="date">
+  <label>รูปหลักฐานตอนคืน (ถ้ามี)</label>
+  <div class="photo">
+    <img id="rt-prev" alt="" hidden>
+    <div class="btns">
+      <button type="button" id="rt-btn" class="ghost">📷 ถ่ายรูป / เลือกรูป</button>
+      <button type="button" id="rt-rm" class="danger" hidden>ลบรูป</button>
+    </div>
+    <input id="rt-file" type="file" accept="image/*" hidden>
+  </div>
+  <div id="rt-err" class="err"></div>
+  <div class="foot"><button id="rt-save">บันทึกการคืน</button><button id="rt-cancel" class="ghost">ยกเลิก</button></div>
 </dialog>
 
 <dialog id="viewer"><img id="viewer-img" alt=""></dialog>
