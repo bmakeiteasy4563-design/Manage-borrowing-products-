@@ -10,8 +10,8 @@
       "dueDate": null,
       "note": "รวมอันเก่า 2ขวด",
       "id": "mwmuewde0n11l",
-      "status": "borrowed",
-      "dateReturned": null,
+      "status": "returned",
+      "dateReturned": "2026-11-19",
       "batchId": "mwmuewdeu6gr7",
       "image": "images/mwmuohrgano3p.jpg"
     },
