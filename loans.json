@@ -25,10 +25,11 @@
       "dueDate": null,
       "note": null,
       "id": "mwmuewdeqiua3",
-      "status": "borrowed",
-      "dateReturned": null,
+      "status": "returned",
+      "dateReturned": "2026-11-19",
       "batchId": "mwmuewdeu6gr7",
-      "image": "images/mwmunnw6nnqb3.jpg"
+      "image": "images/mwmunnw6nnqb3.jpg",
+      "returnImage": "images/mwn3rgct3lgf7.jpg"
     },
     {
       "item": "VISTRA ZINC",
