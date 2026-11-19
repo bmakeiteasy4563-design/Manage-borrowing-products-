@@ -8,11 +8,12 @@
       "lender": "mai",
       "dateBorrowed": "2026-11-12",
       "dueDate": null,
-      "note": null,
+      "note": "รวมอันเก่า 2ขวด",
       "id": "mwmuewde0n11l",
       "status": "borrowed",
       "dateReturned": null,
-      "batchId": "mwmuewdeu6gr7"
+      "batchId": "mwmuewdeu6gr7",
+      "image": "images/mwmuohrgano3p.jpg"
     },
     {
       "item": "VISTRA B  ULTRA",
